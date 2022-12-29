@@ -1,0 +1,112 @@
+------------------------------------------------------------------------
+----------CREACION DE TABLAS DB HOSPITAL
+-------------------------------------------------------------------------
+--Tabla Consultorio
+create table consultorio (
+    numeroC char(4), 
+    piso int, 
+    capacidad int,
+	constraint primaryKey_NumeroC primary key (numeroC)
+);
+
+--Tabla Medico
+create table medico (
+    cmp char(4),
+    nombre varchar(20),
+    edad int, 
+    ciudad varchar(20),
+    especialidad varchar(20),
+    numeroC char(4),
+	constraint primaryKey_cmp primary key (cmp),
+    constraint foreignKey_numeroC foreign key (numeroC) references consultorio (numeroC)
+);
+
+--Tabla Paciente
+create table paciente (
+	ID_Pac char(4),
+    nombre varchar(20),
+    edad int,
+    ciudad varchar(20),
+    enfermedad varchar(50),
+    constraint primaryKey_ID_Pac primary key (ID_Pac)    
+);
+
+--Tabla Consulta
+create table consulta (
+	CMP char(4),
+    ID_Pac char(4),
+    fecha date,
+    hora time,
+    constraint primaryKey_ID_Consulta primary key (CMP, ID_Pac, fecha), 
+    constraint foreignKey_ConsultaCMP foreign key (CMP) references medico (cmp),
+    constraint foreignKey_ConsultaIDPac foreign key (ID_Pac) references paciente (ID_Pac)
+);
+
+--------------------------------------
+---INSERCIÓN DE DATOS EN LAS TABLAS CREADAS
+--------------------------------------
+
+--Tabla Consultorio
+insert into consultorio values ('C100',1, 5), 
+('C101',1, 6), 
+('C200',2, 3),
+('C202',2, 5),
+('C301',3, 4),
+('C302',3, 4);
+--select * from consultorio;
+
+--Tabla Medico
+insert into medico values 
+('M001', 'Jose Perez', 40, 'Lima', 'Neurologia', 'C101'),
+('M002', 'Lucia Peralta', 36, 'Lima', 'Pediatria', 'C200'),
+('M003', 'Luis Julca', 45, 'Huacho', 'Gastroenterologia', 'C202'), 
+('M004', 'Jose Lao', 40, 'Huacho', 'Pediatria', 'C301');
+--select * from Medico;
+
+insert into medico (cmp, nombre, edad, ciudad,especialidad) values 
+('M005', 'Diana Chu', 40, 'Lima', 'Neurologia');
+
+--Tabla Paciente 
+insert into paciente values ('P001', 'Ana Garcia', 20, 'Lima', 'Gripe'),
+('P002', 'Gabriela Soliz', 35, 'Lima', 'Dolor de cabeza'),
+('P003', 'Daniel Lopez', 1, 'Lima', 'Fiebre'),
+('P004', 'Angel Torres', 5, 'Huacho', 'Tos');
+--select * from Paciente
+
+--Tabla Consulta
+insert into consulta values ('M001', 'P002', '06/11/2017', '07:00'),
+('M002', 'P004', '06/11/2017', '10:00'),
+('M003', 'P001', '07/11/2017', '15:00');
+
+---QUERIES
+-- A NIVEL DEL HAVING 
+select  cmp
+  from consulta 
+group by cmp
+having count (cmp)>= 1
+ 
+--ANY
+select *
+  from medico 
+where medico.cmp = ANY (select  cmp
+                         from consulta 
+                         group by cmp
+                        having count (cmp)>= 1)
+--IN                         
+select *
+ from medico 
+where medico.cmp in (select consulta.cmp 
+						from consulta)
+--EXISTS                         
+select *
+ from paciente 
+where exists  (select consulta.id_pac
+                                   from consulta )
+---LEFT JOIN                                   
+select medico.*, consulta.*
+  from medico 
+ left join consulta on medico.cmp = consulta.cmp
+
+---RIGHT JOIN
+select consulta.*, paciente.*
+  from consulta right join paciente on (consulta.id_pac = paciente.id_pac)
